@@ -1,6 +1,7 @@
 from pydantic import BaseModel as bm
 from typing import Optional, Any, Type
 import json
+import pandas as pd
 
 class gorely_stats(bm):
     real_ratings: Optional[list[tuple[int, float]]] = []
@@ -100,18 +101,24 @@ class GameInventory(bm):
     def find_games_requiring_manual_info(self):
         empty_games = []
         for each_game in self.all_games:
-            if each_game.age_rec == 0 or each_game.game_release_date == 0 or each_game.players == (0,0):
+            if each_game.age_rec == 0 or each_game.game_release_date == 0 or each_game.players == (0,0) or each_game.BGG_rating == None:
                 print(each_game.name)
                 empty_games.append(each_game)
         return empty_games
     
-    def save(self, save_name: str):
+
+    def json_save(self, save_name: str):
         formatted_list = [one_game.model_dump_json(indent = 5) for one_game in self.all_games]
         
         with open(f"{save_name}.json", "w") as outfile:
             json.dump(formatted_list, outfile, indent = 5)
     
+    def csv_save(self, save_name: str):
+        formatted_list = [one_game.model_dump() for one_game in self.all_games]
+        as_frame = pd.DataFrame(formatted_list)
+        as_frame.to_csv(f'{save_name}.csv', index = False)
 
+    
     @classmethod
     def load_game_inventory(cls, file_path: str):
         with open(file_path) as user_file:
@@ -119,7 +126,8 @@ class GameInventory(bm):
 
         new_inventory = cls()
         for each_game_dict in game_list:
-            as_Game = Game.from_dict(eval(each_game_dict))
+            as_dict = json.loads(each_game_dict)
+            as_Game = Game.from_dict(as_dict)
             new_inventory.all_games.append(as_Game)
         return new_inventory
         

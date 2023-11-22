@@ -3,18 +3,23 @@ from selenium.webdriver.common.by import By
 import re
 import game_structures as gm
 import pandas as pd
+import json
+
+#//*[contains(concat( " ", @class, " " ), concat( " ", "game-header-title-rating", " " ))]
+#'//*[contains(concat( " ", @class, " " ), concat( " ", "has-rating-7", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "ng-binding", " " ))]'
+#//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item", " " )) and (((count(preceding-sibling::*) + 1) = 4) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item-primary", " " ))]
 
 
 driver = webdriver.Chrome()
 initial_dict = {'age_rec': '//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item", " " )) and (((count(preceding-sibling::*) + 1) = 3) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item-primary", " " ))]',
                  'game_release_date': '//*[contains(concat( " ", @class, " " ), concat( " ", "game-year", " " ))]',
                  'players':'//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item", " " )) and (((count(preceding-sibling::*) + 1) = 1) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item-primary", " " ))]',
-                 'BGG_rating':'//*[contains(concat( " ", @class, " " ), concat( " ", "has-rating-7", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "ng-binding", " " ))]',
+                 'BGG_rating':'//*[contains(concat( " ", @class, " " ), concat( " ", "game-header-title-rating", " " ))]',
                  'BGG_age_rec':'//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item", " " )) and (((count(preceding-sibling::*) + 1) = 3) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "btn-xs", " " ))]',
                  'BGG_rating_num':'//*[contains(concat( " ", @class, " " ), concat( " ", "game-header-title-summary", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "ng-binding", " " )) and (((count(preceding-sibling::*) + 1) = 1) and parent::*)]',
                  'BGG_optimum_players':'//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item", " " )) and (((count(preceding-sibling::*) + 1) = 1) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "btn-xs", " " ))]',
                  'BGG_average_playing_time':'//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item", " " )) and (((count(preceding-sibling::*) + 1) = 2) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item-primary", " " ))]',
-                 'BGG_complexity':'//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-weight-light", " " ))]',
+                 'BGG_complexity':'//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item", " " )) and (((count(preceding-sibling::*) + 1) = 4) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item-primary", " " ))]',
                  'BGG_description':'//p[contains(concat( " ", @class, " " ), concat( " ", "ng-scope", " " ))]',
                  'themes':'//*[contains(concat( " ", @class, " " ), concat( " ", "ng-scope", " " )) and (((count(preceding-sibling::*) + 1) = 4) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "text-block", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "ng-binding", " " ))]',
                  'mechanisms':'//*[contains(concat( " ", @class, " " ), concat( " ", "ng-scope", " " )) and (((count(preceding-sibling::*) + 1) = 3) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "text-block", " " ))]'
@@ -38,11 +43,21 @@ def retrieve_raw_information(a_driver, x_path: str):
             return res_list
 
 
-def reformulate_single_num(num_str: str):
+def reformulate_int(num_str: str):
     if num_str != None:
         numbers = re.findall(r'\d+', str(num_str))
         if len(numbers)> 0:
             return int(numbers[0])
+        else:
+            return None
+    else:
+        return None
+    
+def reformulate_float(num_str: str):
+    if num_str != None:
+        numbers = re.findall(r'\d+\.*\d+', str(num_str))
+        if len(numbers)> 0:
+            return float(numbers[0])
         else:
             return None
     else:
@@ -87,22 +102,27 @@ def floatify(a_str: str):
     if a_str != None and type(a_str) != list: 
         return float(a_str)
     elif type(a_str) == list:
-        print(list)
+        print(a_str)
+        for a in a_str:
+            if len(a) !=0:
+                return float(a)
+        return None
+    else:
         return None
    
 def reformulate_response(old_dict:dict):
     
     response_dict = old_dict.copy()
-    response_dict['age_rec'] = reformulate_single_num(response_dict['age_rec'])
-    response_dict['game_release_date'] = reformulate_single_num(response_dict['game_release_date'])
+    response_dict['age_rec'] = reformulate_int(response_dict['age_rec'])
+    response_dict['game_release_date'] = reformulate_int(response_dict['game_release_date'])
     response_dict['players'] = reformulate_boundary(response_dict['players'])
 
     response_dict['BGG_rating'] = floatify(response_dict['BGG_rating'])
-    response_dict['BGG_age_rec'] = reformulate_single_num(response_dict['BGG_age_rec'])
-    response_dict['BGG_rating_num'] = reformulate_single_num(response_dict['BGG_rating_num'])*1000
+    response_dict['BGG_age_rec'] = reformulate_int(response_dict['BGG_age_rec'])
+    response_dict['BGG_rating_num'] = reformulate_int(response_dict['BGG_rating_num'])*1000
     response_dict['BGG_optimum_players'] = reformulate_optimum_players(response_dict['BGG_optimum_players'])
     response_dict['BGG_average_playing_time'] = boundary_average(response_dict['BGG_average_playing_time'])
-    response_dict['BGG_complexity'] = floatify(response_dict['BGG_complexity'])
+    response_dict['BGG_complexity'] = reformulate_float(response_dict['BGG_complexity'])
     response_dict['themes'] = reformulate_theme_list(response_dict['themes'])
     response_dict['mechanisms'] = reformulate_mechanisms(response_dict['mechanisms'])
 
@@ -130,9 +150,11 @@ def retrieve_information_for_all_games(game_table: pd.DataFrame, save: bool = Tr
     initial_game_inventory = gm.GameInventory()
     game_table.apply(lambda row: retrieve_information_for_one_game(game_name = row['name'], game_url = row['page_url'], game_inventory = initial_game_inventory), axis = 1)
     if save == True:
-        initial_game_inventory.save(file_name)
+        initial_game_inventory.json_save(file_name)
     return initial_game_inventory
 
 initial_test = retrieve_information_for_all_games(our_games)
+
+
 
 
