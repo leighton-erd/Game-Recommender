@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import re
 import game_structures as gm
+import pandas as pd
 
 
 driver = webdriver.Chrome()
@@ -19,6 +20,7 @@ initial_dict = {'age_rec': '//*[contains(concat( " ", @class, " " ), concat( " "
                  'mechanisms':'//*[contains(concat( " ", @class, " " ), concat( " ", "ng-scope", " " )) and (((count(preceding-sibling::*) + 1) = 3) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "text-block", " " ))]'
 }
 
+our_games = pd.read_csv('name_links.csv')
 
 def retrieve_raw_information(a_driver, x_path: str):
     try:
@@ -38,21 +40,28 @@ def retrieve_raw_information(a_driver, x_path: str):
 
 def reformulate_single_num(num_str: str):
     if num_str != None:
-        return int(re.findall(r'\d+', num_str)[0])
+        numbers = re.findall(r'\d+', str(num_str))
+        if len(numbers)> 0:
+            return int(numbers[0])
+        else:
+            return None
     else:
         return None
 
 def reformulate_boundary(boundary_str:str):
     if boundary_str != None:
-        all_nums = re.findall(r'\d+', boundary_str)
-        return (int(all_nums[0]), int(all_nums[1]))
+        all_nums = [int(num) for num in re.findall(r'\d+', boundary_str)]
+        if len(all_nums) == 1:
+            return (all_nums[0], all_nums[0])
+        else:
+            return tuple(all_nums)
     else:
         return None
 
 def boundary_average(boundary_str: str):
-    if boundary_str != None:
-        boundary_tuple = reformulate_boundary(boundary_str)
-        return sum(boundary_tuple)/len(boundary_tuple)
+    boundary_tuple = reformulate_boundary(boundary_str)
+    if boundary_tuple != None:
+        return round(sum(boundary_tuple)/len(boundary_tuple))
     else:
         return None
 
@@ -75,8 +84,11 @@ def reformulate_optimum_players(player_str: str):
         return int(re.findall(r'\d+', optimum)[0])
     
 def floatify(a_str: str):
-    if a_str != None: 
+    if a_str != None and type(a_str) != list: 
         return float(a_str)
+    elif type(a_str) == list:
+        print(list)
+        return None
    
 def reformulate_response(old_dict:dict):
     
@@ -97,11 +109,30 @@ def reformulate_response(old_dict:dict):
     return response_dict
 
 def get_information_for_game(game_name:str, game_url: str, a_driver = driver, x_path_dict:dict = initial_dict):
-    a_driver.get(game_url)
-    response_dict = {}
-    for key, xpath_url in x_path_dict.items():
-        web_response = retrieve_raw_information(a_driver, xpath_url)
-        response_dict[key] = web_response
-    formatted_dict = reformulate_response(response_dict)
-    response_model = gm.Game(name = game_name, **formatted_dict)
+    if game_url != '-':
+        a_driver.get(game_url)
+        response_dict = {}
+        for key, xpath_url in x_path_dict.items():
+            web_response = retrieve_raw_information(a_driver, xpath_url)
+            response_dict[key] = web_response
+        formatted_dict = reformulate_response(response_dict)
+        response_model = gm.Game(name = game_name, **formatted_dict)
+    else:
+        response_model = gm.Game(name = game_name, age_rec = 0, game_release_date = 0, players = (0,0))
     return response_model
+
+def retrieve_information_for_one_game(game_name: str, game_url: str, game_inventory: gm.GameInventory, a_driver = driver, x_path_dict:dict = initial_dict):
+    print(game_name)
+    as_Game = get_information_for_game(game_name, game_url, a_driver, x_path_dict)
+    game_inventory.add_game(as_Game)
+
+def retrieve_information_for_all_games(game_table: pd.DataFrame, save: bool = True, file_name: str = 'game_inventory'):
+    initial_game_inventory = gm.GameInventory()
+    game_table.apply(lambda row: retrieve_information_for_one_game(game_name = row['name'], game_url = row['page_url'], game_inventory = initial_game_inventory), axis = 1)
+    if save == True:
+        initial_game_inventory.save(file_name)
+    return initial_game_inventory
+
+initial_test = retrieve_information_for_all_games(our_games)
+
+

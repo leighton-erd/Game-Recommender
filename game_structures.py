@@ -1,5 +1,6 @@
 from pydantic import BaseModel as bm
-from typing import Optional
+from typing import Optional, Any, Type
+import json
 
 class gorely_stats(bm):
     real_ratings: Optional[list[tuple[int, float]]] = []
@@ -53,9 +54,9 @@ class gorely_stats(bm):
 
 class Game(bm):
     name: str
-    age_rec: int
-    game_release_date: int
-    players: tuple[int, int]
+    age_rec: Optional[int] = 0
+    game_release_date: Optional[int] = 0
+    players: Optional[tuple[int, int]] = (0,0)
 
     BGG_rating: Optional[float] = None
     BGG_age_rec: Optional[int] = None
@@ -84,15 +85,43 @@ class Game(bm):
     def append_age_rec(self, rating: float):
         self.gorely_opinion.age_rec.append(rating)
 
+    @classmethod
+    def from_dict(cls, game_dict: dict):
+        return cls(**game_dict)
+
+
 
 class GameInventory(bm):
-    all_games: list[Game]
+    all_games: Optional[list[Game]] = []
+    
+    def add_game(self, a_game: Game):
+        self.all_games.append(a_game)
 
-
-
-
-
+    def find_games_requiring_manual_info(self):
+        empty_games = []
+        for each_game in self.all_games:
+            if each_game.age_rec == 0 or each_game.game_release_date == 0 or each_game.players == (0,0):
+                print(each_game.name)
+                empty_games.append(each_game)
+        return empty_games
+    
+    def save(self, save_name: str):
+        formatted_list = [one_game.model_dump_json(indent = 5) for one_game in self.all_games]
+        
+        with open(f"{save_name}.json", "w") as outfile:
+            json.dump(formatted_list, outfile, indent = 5)
     
 
+    @classmethod
+    def load_game_inventory(cls, file_path: str):
+        with open(file_path) as user_file:
+            game_list = json.load(user_file)
+
+        new_inventory = cls()
+        for each_game_dict in game_list:
+            as_Game = Game.from_dict(eval(each_game_dict))
+            new_inventory.all_games.append(as_Game)
+        return new_inventory
+        
 
 
