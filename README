@@ -1,0 +1,68 @@
+# GAME INVENTORY
+Game inventory is a program to recommend a boardgame based on inputted factors such as number of players, ideal themes and length of game required. It is currently specifically formatted to the Gorely household games cupboard, and has retrieved data from these games from boardgamegeek.com. There is an additional option to input ones own reviews and ratings etc, these will be weighted more heavily in game recommendation to ensure the service is personalised to you. 
+
+## USAGE
+### retrieving game information
+Within this folder is all Gorely game information, stored in `game_inventory.json`. Should the user want to tailor this to their own game collection, the following process should be used.
+1. A csv file is required containing the game name and the url of that games page on boardgamegeek. See `name_links.csv` as an example
+2. The data from this file is then read via selenium, with the code contained in the `using_selenium.py` file. An example:
+
+```python
+games = pd.read_csv("your_name_links.csv")
+bgg_information = using_selenium.retrieve_information_for_all_games(games)
+```
+This will save the users game inventory. By default, the file is called `game_inventory.json`, but this can be changed. See `using_selenium.py` for more information.
+
+### structure
+The required formatting for use is contained in `game_structures` and the json inventory can be converted to this format as so:
+
+```python
+game_inventory = game_structures.GameInventory.load_game_inventory("your_game_json.json")
+```
+
+### recommendation and use
+Functionality is contained in `recommender`. The user can input multiple different parameters. There are two compulsory parameters (the game inventory and the number of players) and some optional ones. These are:
+
+- length_of_game: str 
+    - "short and sweet": (0, 30),
+    - "sit down gathering": (20, 75),
+    - "consume my mind": (75, 1000000000000)
+- game_age: str
+    -  "new": (2012, 3000),
+    - "classic": (2003, 2015),
+    - "old school": (1900, 2003),
+- popularity: str
+    - "popular": (10000, 100000000000),
+    - "cult classic": (10000, 30000),
+    - "hidden treasure": (0, 10000),
+- complexity: str
+    - "welcome to boardgames": (0, 2.2),
+    - "ill dabble again": (2, 3),
+    - "consume my mind": (2.7, 5)
+- themes_mechanisms: list
+    Any themes can be inputted, even if it is not in the database. To view the current database of themes and mechanisms, this is in `themes_and_mechanisms.json`. To recalculate the themes and mechanisms database should additional games be added to the inventory etc use this:
+    `game_inventory.get_all_themes_and_mechanisms()`
+- num_of_recs:int
+    Default is 3. This ammends how many games are recommended as output
+
+An example of the full process
+
+```python
+game_inventory = gm.GameInventory.load_game_inventory("game_inventory.json")
+recommend_a_game(game_inventory, num_of_players = 3, complexity_vibe = "welcome to boardgames")
+```
+This outputs: 
+`[('Heat: Pedal to the metal', "Manage your race car's speed to keep from overheating.", 8.1), ('Quacks of Quedlingburg', 'Pull ingredients from your stock to make your pot bubble, but hopefully not explode!', 7.8), ('Azul', 'Artfully embellish the walls of your palace by drafting the most beautiful tiles.', 7.8)]`
+
+
+##### notes
+- *You will be able to add your own ratings etc shortly, it is just to be finalised*
+- *Weighted averages are as follows:*
+    - Optimum players equals the desired players: 5% weight increase
+    - Inputted (ie user) ratings: 50% weight increase
+- *The whole project requires front end engineering
+
+##### credit
+All gaming information is from [boardgamegeek](https://boardgamegeek.com/)
+
+
