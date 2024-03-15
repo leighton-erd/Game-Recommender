@@ -54,9 +54,13 @@ recommend_a_game(game_inventory, num_of_players = 3, complexity_vibe = "welcome 
 This outputs: 
 `[('Heat: Pedal to the metal', "Manage your race car's speed to keep from overheating.", 8.1), ('Quacks of Quedlingburg', 'Pull ingredients from your stock to make your pot bubble, but hopefully not explode!', 7.8), ('Azul', 'Artfully embellish the walls of your palace by drafting the most beautiful tiles.', 7.8)]`
 
+### inserting own ratings
+user can now insert their own ratings as follows:
+```python
+game_inventory.insert_rating(game_name, rating, number_of_players, play_time(optional), complexity(optional), age_reccomendation(optional))
+```
 
 ##### notes
-- *You will be able to add your own ratings etc shortly, it is just to be finalised*
 - *Weighted averages are as follows:*
     - Optimum players equals the desired players: 5% weight increase
     - Inputted (ie user) ratings: 50% weight increase

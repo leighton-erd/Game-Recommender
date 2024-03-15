@@ -3,12 +3,10 @@ from selenium.webdriver.common.by import By
 import re
 import game_structures as gm
 import pandas as pd
-import json
 
 # //*[contains(concat( " ", @class, " " ), concat( " ", "game-header-title-rating", " " ))]
 #'//*[contains(concat( " ", @class, " " ), concat( " ", "has-rating-7", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "ng-binding", " " ))]'
 # //*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item", " " )) and (((count(preceding-sibling::*) + 1) = 4) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "gameplay-item-primary", " " ))]
-
 
 driver = webdriver.Chrome()
 initial_dict = {
@@ -25,7 +23,6 @@ initial_dict = {
     "themes": '//*[contains(concat( " ", @class, " " ), concat( " ", "ng-scope", " " )) and (((count(preceding-sibling::*) + 1) = 4) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "text-block", " " ))]//*[contains(concat( " ", @class, " " ), concat( " ", "ng-binding", " " ))]',
     "mechanisms": '//*[contains(concat( " ", @class, " " ), concat( " ", "ng-scope", " " )) and (((count(preceding-sibling::*) + 1) = 3) and parent::*)]//*[contains(concat( " ", @class, " " ), concat( " ", "text-block", " " ))]',
 }
-
 
 def retrieve_raw_information(a_driver, x_path: str):
     try:
@@ -174,7 +171,8 @@ def retrieve_information_for_one_game(
     as_Game = get_information_for_game(game_name, game_url, a_driver, x_path_dict)
     game_inventory.add_game(as_Game)
 
-
+##############################################################################
+    
 def retrieve_information_for_all_games(
     game_table: pd.DataFrame, save: bool = True, file_name: str = "game_inventory"
 ):
